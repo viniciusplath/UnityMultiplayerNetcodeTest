@@ -1,2 +1,2 @@
 # UnityMultiplayerNetcodeTest
-Just a simple project to made some tests with multiplayer.
+Just a simple project to do some tests with multiplayer.
