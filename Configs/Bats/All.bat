@@ -1,0 +1,1 @@
+start MultiplayerTest.exe -logfile log-server.txt -mlapi server & start MultiplayerTest.exe -logfile log-client.txt -mlapi client
