@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Text;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -12,26 +14,26 @@ namespace MultiplayerTest
         Client
     }
 
-    public class MultiplayerManager : MonoBehaviour
+    public class MultiplayerManager : NetworkManager
     {
-        private List<Player> players = new();
+        private static MultiplayerManager instance;
+        private List<NetworkClient> clients = new List<NetworkClient>();
         private PeerType peerType = PeerType.None;
 
-        void OnGUI()
-        {
-            GUILayout.BeginArea(new Rect(10, 10, 300, 300));
+        #region Properties
+        public static MultiplayerManager Instance { get => instance; }
+        #endregion
 
-            if (!NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsServer)
+        private void Awake()
+        {
+            if (instance == null)
             {
-                StartButtons();
+                instance = this;
             }
             else
             {
-                StatusLabels();
-                //SubmitNewPosition();
+                Destroy(gameObject);
             }
-
-            GUILayout.EndArea();
         }
 
         private void StartButtons()
@@ -59,49 +61,78 @@ namespace MultiplayerTest
                 case PeerType.Server:
                     peerType = PeerType.Server;
                     SetupServer();
-                    NetworkManager.Singleton.StartServer();
+                    Singleton.StartServer();
                     break;
 
                 case PeerType.Host:
                     peerType = PeerType.Host;
-                    NetworkManager.Singleton.StartHost();
+                    SetConnectionData();
+                    Singleton.StartHost();
                     break;
 
                 case PeerType.Client:
                     peerType = PeerType.Client;
-                    NetworkManager.Singleton.StartClient();
+                    SetConnectionData();
+                    Singleton.StartClient();
                     break;
             }
         }
 
+        private void SetConnectionData()
+        {
+            Singleton.NetworkConfig.ConnectionData = Encoding.ASCII.GetBytes(Application.version); // Just a test.
+        }
+
         private void SetupServer()
         {
-            NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
-            NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
-            NetworkManager.Singleton.OnServerStarted += OnServerStarted;
+            Singleton.ConnectionApprovalCallback += OnConnectionApproval;
+            Singleton.OnClientConnectedCallback += OnClientConnected;
+            Singleton.OnClientDisconnectCallback += OnClientDisconnected;
+            //Singleton.OnServerStarted += OnServerStarted;
         }
 
-        private void OnServerStarted()
+        private void OnConnectionApproval(ConnectionApprovalRequest p_request, ConnectionApprovalResponse p_response)
         {
-
+            Debug.Log("Client: " + p_request.ClientNetworkId + " wants to connect.");
+            Debug.Log("Version: " + Encoding.ASCII.GetString(p_request.Payload));
+            p_response.CreatePlayerObject = false;
+            p_response.Approved = true;
         }
 
-        private void OnClientDisconnected(ulong obj)
+        //private void OnServerStarted()
+        //{
+
+        //}
+
+        private void OnClientDisconnected(ulong p_playerID)
         {
-    
+            if (Singleton.ConnectedClients.TryGetValue(p_playerID, out NetworkClient _client))
+            {
+                Debug.Log("Client disconected: " + _client.ClientId);
+                clients.Remove(clients.Find(x => x.ClientId == p_playerID));
+            }
         }
 
-        private void OnClientConnected(ulong obj)
+        private void OnClientConnected(ulong p_playerID)
         {
-
+            if (Singleton.ConnectedClients.TryGetValue(p_playerID, out NetworkClient _client))
+            {
+                Debug.Log("New client connected: " + _client.ClientId);
+                clients.Add(_client);
+            }
         }
 
         private void StatusLabels()
         {
-            peerType = NetworkManager.Singleton.IsHost ? PeerType.Host : NetworkManager.Singleton.IsServer ? PeerType.Server : PeerType.Client;
+            peerType = Singleton.IsHost ? PeerType.Host : Singleton.IsServer ? PeerType.Server : PeerType.Client;
 
-            GUILayout.Label("Transport: " + NetworkManager.Singleton.NetworkConfig.NetworkTransport.GetType().Name);
+            GUILayout.Label("Transport: " + Singleton.NetworkConfig.NetworkTransport.GetType().Name);
             GUILayout.Label("Mode: " + peerType);
+
+            if (Singleton.IsServer)
+            {
+                GUILayout.Label("Players connected: " + clients.Count);
+            }
         }
 
         //private void SubmitNewPosition()
@@ -122,5 +153,22 @@ namespace MultiplayerTest
         //        }
         //    }
         //}
+         
+        private void OnGUI()
+        {
+            GUILayout.BeginArea(new Rect(10, 10, 300, 300));
+
+            if (!Singleton.IsClient && !Singleton.IsServer)
+            {
+                StartButtons();
+            }
+            else
+            {
+                StatusLabels();
+                //SubmitNewPosition();
+            }
+
+            GUILayout.EndArea();
+        }
     }
 }
