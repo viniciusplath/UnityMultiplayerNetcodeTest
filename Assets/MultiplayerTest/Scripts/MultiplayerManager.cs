@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Text;
 using Unity.Netcode;
@@ -133,6 +132,19 @@ namespace MultiplayerTest
             {
                 GUILayout.Label("Players connected: " + clients.Count);
             }
+            else if (Singleton.IsClient)
+            {
+                if (GUILayout.Button("Request spawn player"))
+                {
+                    SpawnPlayerRequestServerRpc();
+                }
+            }
+        }
+
+        [ServerRpc]
+        private void SpawnPlayerRequestServerRpc(ServerRpcParams rpcParams = default)
+        {
+            Debug.Log("Here."); // Test
         }
 
         //private void SubmitNewPosition()
@@ -153,7 +165,7 @@ namespace MultiplayerTest
         //        }
         //    }
         //}
-         
+
         private void OnGUI()
         {
             GUILayout.BeginArea(new Rect(10, 10, 300, 300));
