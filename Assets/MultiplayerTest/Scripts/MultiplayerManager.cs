@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Text;
 using Unity.Netcode;
@@ -88,7 +87,6 @@ namespace MultiplayerTest
             Singleton.ConnectionApprovalCallback += OnConnectionApproval;
             Singleton.OnClientConnectedCallback += OnClientConnected;
             Singleton.OnClientDisconnectCallback += OnClientDisconnected;
-            //Singleton.OnServerStarted += OnServerStarted;
         }
 
         private void OnConnectionApproval(ConnectionApprovalRequest p_request, ConnectionApprovalResponse p_response)
@@ -98,11 +96,6 @@ namespace MultiplayerTest
             p_response.CreatePlayerObject = false;
             p_response.Approved = true;
         }
-
-        //private void OnServerStarted()
-        //{
-
-        //}
 
         private void OnClientDisconnected(ulong p_playerID)
         {
@@ -119,12 +112,13 @@ namespace MultiplayerTest
             {
                 Debug.Log("New client connected: " + _client.ClientId);
                 clients.Add(_client);
-                SpawnPlayer();
             }
         }
 
-        private void SpawnPlayer()
+        private void SpawnPlayer(ulong p_clientId)
         {
+            GameObject _go = Instantiate(Singleton.NetworkConfig.PlayerPrefab);
+            _go.GetComponent<NetworkObject>().SpawnAsPlayerObject(p_clientId);
 
         }
 
@@ -155,7 +149,7 @@ namespace MultiplayerTest
                         {
                             if (GUILayout.Button("Spawn player"))
                             {
-                                //Singleton.SpawnManager.sa
+                                SpawnPlayer(_client.ClientId);
                             }
                         }
                     }
@@ -163,25 +157,6 @@ namespace MultiplayerTest
                 GUILayout.EndVertical();
             }
         }
-
-        //private void SubmitNewPosition()
-        //{
-        //    if (GUILayout.Button(NetworkManager.Singleton.IsServer ? "Move" : "Request Position Change"))
-        //    {
-        //        if (NetworkManager.Singleton.IsServer && !NetworkManager.Singleton.IsClient)
-        //        {
-        //            foreach (ulong uid in NetworkManager.Singleton.ConnectedClientsIds)
-        //            {
-        //                NetworkManager.Singleton.SpawnManager.GetPlayerNetworkObject(uid).GetComponent<Player>().Move();
-        //            }
-        //        }
-        //        else
-        //        {
-        //            NetworkObject _playerObject = NetworkManager.Singleton.SpawnManager.GetLocalPlayerObject();
-        //            Player _player = _playerObject.GetComponent<Player>();
-        //        }
-        //    }
-        //}
 
         private void OnGUI()
         {
@@ -194,7 +169,6 @@ namespace MultiplayerTest
             else
             {
                 StatusLabels();
-                //SubmitNewPosition();
             }
 
             GUILayout.EndArea();
