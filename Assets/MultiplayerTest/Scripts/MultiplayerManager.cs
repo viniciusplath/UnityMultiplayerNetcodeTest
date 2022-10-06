@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Unity.Netcode;
@@ -118,33 +119,49 @@ namespace MultiplayerTest
             {
                 Debug.Log("New client connected: " + _client.ClientId);
                 clients.Add(_client);
+                SpawnPlayer();
             }
+        }
+
+        private void SpawnPlayer()
+        {
+
         }
 
         private void StatusLabels()
         {
             peerType = Singleton.IsHost ? PeerType.Host : Singleton.IsServer ? PeerType.Server : PeerType.Client;
 
-            GUILayout.Label("Transport: " + Singleton.NetworkConfig.NetworkTransport.GetType().Name);
-            GUILayout.Label("Mode: " + peerType);
+            GUILayout.BeginVertical("box");
+            { 
+                GUILayout.Label("Transport: " + Singleton.NetworkConfig.NetworkTransport.GetType().Name);
+                GUILayout.Label("Mode: " + peerType);
 
-            if (Singleton.IsServer)
-            {
-                GUILayout.Label("Players connected: " + clients.Count);
-            }
-            else if (Singleton.IsClient)
-            {
-                if (GUILayout.Button("Request spawn player"))
+                if (Singleton.IsServer)
                 {
-                    SpawnPlayerRequestServerRpc();
+                    GUILayout.Label("Players connected: " + clients.Count);
                 }
             }
-        }
+            GUILayout.EndVertical();
 
-        [ServerRpc]
-        private void SpawnPlayerRequestServerRpc(ServerRpcParams rpcParams = default)
-        {
-            Debug.Log("Here."); // Test
+            if (clients.Count > 0)
+            {
+                GUILayout.BeginVertical("box");
+                {
+                    foreach (NetworkClient _client in clients)
+                    {
+                        GUILayout.Label("Client ID: " + _client.ClientId);
+                        if (_client.PlayerObject == null)
+                        {
+                            if (GUILayout.Button("Spawn player"))
+                            {
+                                //Singleton.SpawnManager.sa
+                            }
+                        }
+                    }
+                }
+                GUILayout.EndVertical();
+            }
         }
 
         //private void SubmitNewPosition()
